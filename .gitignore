@@ -1,2 +1,2 @@
-.env.custom
-log*.txt
+.env.*
+log/*.txt
