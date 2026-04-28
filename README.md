@@ -1,6 +1,6 @@
 # AI hub
 
-A shell script to interact with LLM providers on your terminal.
+A shell script to interact with LLM [providers](./provider/) on your terminal.
 
 ## Installation
 
