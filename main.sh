@@ -47,7 +47,8 @@ build_title(){
 
 build_log_file_name(){
 	local title=$1
-	echo "log/$(date '+%Y%m%d-%H%M%S')_${AIHUB_PROVIDER}_${AIHUB_MODEL}_${title}.txt"
+	local file_name=$(echo "${title}_${AIHUB_PROVIDER}_${AIHUB_MODEL}" | tr '/' '-')
+	echo "log/$(date '+%Y%m%d-%H%M%S')_${file_name}.txt"
 }
 
 prompt_once(){
@@ -165,11 +166,13 @@ init_completions_payload_standard() {
     local role="$1"
 	jq -n \
         --arg model "$AIHUB_MODEL" \
-        --arg role "$role" \
         --arg temp "${AIHUB_TEMPERATURE}" \
+		--arg max "${AIHUB_MAX_TOKENS}" \
+        --arg role "$role" \
         '{
 			model: $model, 
-			temperature: ($temp | tonumber), 
+			temperature: ($temp | tonumber),
+			max_completion_tokens: ($max | tonumber),
 			messages: [{role: "system", content: $role}]
 		}'
 }
