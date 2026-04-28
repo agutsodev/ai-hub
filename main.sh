@@ -53,19 +53,24 @@ build_log_file_name(){
 prompt_once(){
 	local title="$1"
 	local prompt="$2"
+
+	local log_file=$(build_log_file_name "$title")
+	local role=$AIHUB_ROLE
+
+	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
+	payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
 	
-	log_file=$(build_log_file_name "$title")
 	echo -e "$(date) payload: \n "$payload" \n" > $log_file
 
 	while true; do
-		response=$(request_$AIHUB_PROVIDER "$prompt")		
+		response=$(request_completions_$AIHUB_PROVIDER "$payload")		
 		[[ "$response" != "" ]] && break
 		should_retry
 	done
 
 	echo -e "$(date) response: \n $response \n" >> $log_file
 
-	answer=$(parse_response_$AIHUB_PROVIDER "$response")
+	answer=$(parse_completions_response_$AIHUB_PROVIDER "$response")
 	[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
 
 	print_answer "$answer"
@@ -76,7 +81,7 @@ start_chat(){
 	[[ "$role" == "" ]] && role=$AIHUB_ROLE
 	printf "🔷 role: $role\n"
 
-	local payload=$(init_chat_payload_$AIHUB_PROVIDER "$role")
+	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 
 	local log_file=""
 	while true; do
@@ -88,24 +93,24 @@ start_chat(){
 			log_file=$(build_log_file_name "CHAT_$title")
 		fi
 
-		payload=$(concate_chat_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
+		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
 
 		echo -e "$(date) payload: \n $payload \n" >> $log_file
 		
 		while true; do
-			response=$(request_$AIHUB_PROVIDER "$prompt")
+			response=$(request_completions_$AIHUB_PROVIDER "$payload")
 			[[ "$response" != "" ]] && break
 			should_retry
 		done
 
 		echo -e "$(date) response: \n $response \n" >> $log_file
 
-		answer=$(parse_response_$AIHUB_PROVIDER "$response")
+		answer=$(parse_completions_response_$AIHUB_PROVIDER "$response")
 		[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
 
 		print_answer "$answer"
 
-		payload=$(concate_chat_payload_$AIHUB_PROVIDER "$payload" "assistant" "$answer")
+		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "assistant" "$answer")
 
 		prompt=""
 	done
@@ -156,16 +161,20 @@ show_provider(){
 	echo -e "🤖 $AIHUB_PROVIDER/$AIHUB_MODEL"
 }
 
-init_chat_payload_standard() {
+init_completions_payload_standard() {
     local role="$1"
 	jq -n \
         --arg model "$AIHUB_MODEL" \
         --arg role "$role" \
-        --arg temp "${AIHUB_TEMPERATURE:-0.7}" \
-        '{model: $model, temperature: ($temp | tonumber), messages: [{role: "system", content: $role}]}'
+        --arg temp "${AIHUB_TEMPERATURE}" \
+        '{
+			model: $model, 
+			temperature: ($temp | tonumber), 
+			messages: [{role: "system", content: $role}]
+		}'
 }
 
-concate_chat_payload_standard() {
+concate_completions_payload_standard() {
     local current_payload="$1"
     local role="$2"
     local content="$3"
@@ -174,7 +183,7 @@ concate_chat_payload_standard() {
     echo "$current_payload" | jq --argjson msg "$new_message" '.messages += [$msg]'
 }
 
-parse_response_standard() {
+parse_completions_response_standard() {
     jq -r '.choices[]?.message?.content' <<< "$1"
 }
 

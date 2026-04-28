@@ -1,33 +1,41 @@
 #!/bin/bash
 
 models_anthropic() {
-    echo "claude-opus-4-6 claude-opus-4-7 claude-sonnet-4-6"
+    echo "claude-haiku-4-5 claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-7"
 }
 
-request_anthropic() {
-    local prompt="$1"
-
+request_completions_anthropic() {
+    local payload="$1"
+    
     validate_provider_key "ANTHROPIC_API_KEY" "https://platform.claude.com/settings/keys"
 
-    local payload=$(jq -n \
-        --arg model "$AIHUB_MODEL" \
-        --arg prompt "$prompt" \
-        --arg temp "$AIHUB_TEMPERATURE" \
-        --arg max "$AIHUB_MAX_TOKENS" \
-        '{
-            model: $model, 
-            temperature: ($temp | tonumber), 
-            max_tokens: ($max | tonumber), 
-            messages: [{role: "user", content: $prompt}]
-        }')
-    
     curl $CURL_OPTS -s https://api.anthropic.com/v1/messages \
+        -H "Content-Type: application/json" \
         -H "x-api-key: $ANTHROPIC_API_KEY" \
         -H "anthropic-version: 2023-06-01" \
-        -H "Content-Type: application/json" \
         -d "$payload"
 }
 
-parse_response_anthropic() {
+init_completions_payload_anthropic() {
+    local role="$1"
+    jq -n \
+        --arg model "$AIHUB_MODEL" \
+        --arg system "$role" \
+        --arg temp "${AIHUB_TEMPERATURE}" \
+        --arg max "${AIHUB_MAX_TOKENS}" \
+        '{
+            model: $model, 
+            system: $system,
+            temperature: ($temp | tonumber), 
+            max_tokens: ($max | tonumber),
+            messages: []
+        }'
+}
+
+concate_completions_payload_anthropic() {
+    concate_completions_payload_standard "$1" "$2" "$3"
+}
+
+parse_completions_response_anthropic() {
     jq -r '.content[]?.text' <<< "$1"
 }
