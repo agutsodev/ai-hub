@@ -92,6 +92,8 @@ ai --provider
 ai -p
 ```
 
+> Provider state will be saved to `.env.state`.
+
 ### Usage helper
 
 **ai [--help|-h]**
