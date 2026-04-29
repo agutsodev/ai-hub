@@ -4,14 +4,20 @@ models_mistral() {
     echo "mistral-small-latest mistral-medium-latest mistral-large-latest"
 }
 
+all_models_mistral() {
+    validate_provider_key "MISTRAL_API_KEY" "https://admin.mistral.ai/organization/api-keys"
+    curl -s https://api.mistral.ai/v1/models \
+        -H "Authorization: Bearer $MISTRAL_API_KEY" | \
+        jq -r '.data[].id' | sort -u
+}
+
 request_completions_mistral() {
     local payload="$1"
-    
     validate_provider_key "MISTRAL_API_KEY" "https://admin.mistral.ai/organization/api-keys"
     
     curl $CURL_OPTS -s https://api.mistral.ai/v1/chat/completions \
         -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $mistral_API_KEY" \
+        -H "Authorization: Bearer $MISTRAL_API_KEY" \
         -d "$payload"
 }
 

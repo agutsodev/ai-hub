@@ -4,9 +4,15 @@ models_openai() {
     echo "gpt-5-nano gpt-5-mini gpt-5 gpt-5-pro"
 }
 
+all_models_openai() {
+    validate_provider_key "OPENAI_API_KEY" "https://platform.openai.com/account/api-keys"
+    curl -s https://api.openai.com/v1/models \
+        -H "Authorization: Bearer $OPENAI_API_KEY" | \
+        jq -r '.data[].id' | sort -u
+}
+
 request_completions_openai() {
     local payload="$1"
-    
     validate_provider_key "OPENAI_API_KEY" "https://platform.openai.com/account/api-keys"
 
     curl $CURL_OPTS -s https://api.openai.com/v1/chat/completions \

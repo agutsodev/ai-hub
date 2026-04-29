@@ -4,6 +4,13 @@ models_groq() {
     echo "llama-3.1-8b-instant openai/gpt-oss-20b"
 }
 
+all_models_groq() {
+    validate_provider_key "GROQ_API_KEY" "https://console.groq.com/keys"
+    curl -s https://api.groq.com/openai/v1/models \
+        -H "Authorization: Bearer $GROQ_API_KEY" | \
+        jq -r '.data[].id' | sort -u
+}
+
 request_completions_groq() {
     local payload="$1"
     validate_provider_key "GROQ_API_KEY" "https://console.groq.com/keys"

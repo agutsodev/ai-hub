@@ -140,22 +140,43 @@ save_state() {
     echo "AIHUB_MODEL=$2" >> ".env.state"
 }
 
-choose_provider(){		
-	providers=($(ls provider | sed 's/\.sh//'))
-	PS3="⚙️  choose provider (1-${#providers[@]}): "
-	select AIHUB_PROVIDER in "${providers[@]}"; do
-		if [[ -n "$AIHUB_PROVIDER" ]]; then break; fi
-	done
+choose_provider(){
+	# avoid double execution when there is no state and -p option is provided
+	[[ "$choose_provider_once" == true ]] && return 
 
-	# call the model function for the chosen provider
-	models=($(models_$AIHUB_PROVIDER))
-	PS3="⚙️  choose model (1-${#models[@]}): "
-	select AIHUB_MODEL in "${models[@]}"; do
-		if [[ -n "$AIHUB_MODEL" ]]; then break; fi
-	done
+    local providers=($(ls provider | sed 's/\.sh//'))
+    
+    PS3="⚙️  choose provider: "
+    select AIHUB_PROVIDER in "${providers[@]}"; do
+        [[ -n "$AIHUB_PROVIDER" ]] && break
+    done
 
-	save_state "$AIHUB_PROVIDER" "$AIHUB_MODEL"	
-	show_provider
+    models=($(models_$AIHUB_PROVIDER))
+    models+=("see-all")
+
+    PS3="⚙️  choose $AIHUB_PROVIDER model: "
+    select CHOICE in "${models[@]}"; do
+        if [[ -n "$CHOICE" ]]; then
+            if [[ "$CHOICE" == "see-all" ]]; then
+                all_models=($(all_models_$AIHUB_PROVIDER))
+                
+                PS3="⚙️  choose $AIHUB_PROVIDER model (see all): "
+                select SUB_CHOICE in "${all_models[@]}"; do
+                    if [[ -n "$SUB_CHOICE" ]]; then
+                        AIHUB_MODEL="$SUB_CHOICE"
+                        break
+                    fi
+                done
+            else
+                AIHUB_MODEL="$CHOICE"
+            fi
+			break
+        fi
+    done
+
+    save_state "$AIHUB_PROVIDER" "$AIHUB_MODEL" 
+    show_provider
+	choose_provider_once=true
 }
 
 show_provider(){
@@ -200,13 +221,13 @@ for provider in provider/*.sh; do source "$provider"; done
 [[ -z "$AIHUB_PROVIDER" ]] && choose_provider || show_provider
 
 # handle options
-if [[ ( $1 == "--help") ||  $1 == "-h" ]]; then 
+if [[ "$1" =~ ^(--help|-h)$ ]]; then 
 	cat usage.txt
 
-elif [[ ( $1 == "--chat") ||  $1 == "-c" ]]; then 	
+elif [[ "$1" =~ ^(--chat|-c)$ ]]; then 	
 	start_chat "${@:2}"
 
-elif [[ ( $1 == "--code") ||  $1 == "-C" ]]; then 
+elif [[ "$1" =~ ^(--code|-C)$ ]]; then 
 	lang="${@:2}"
 	while [ "$lang" == "" ]; do read -e -p "language: " lang; done
 
@@ -217,7 +238,7 @@ elif [[ ( $1 == "--code") ||  $1 == "-C" ]]; then
 
 	prompt_once "CODE_$title" "$full_prompt"
 
-elif [[ ( $1 == "--shell") ||  $1 == "-s" ]]; then
+elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 	source /etc/*-release
 	my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
 
@@ -229,7 +250,7 @@ elif [[ ( $1 == "--shell") ||  $1 == "-s" ]]; then
 
 	prompt_once "SHELL_$title" "$full_prompt"
 
-elif [[ ( $1 == "--provider") ||  $1 == "-p" ]]; then
+elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
 	choose_provider
 
 else	
