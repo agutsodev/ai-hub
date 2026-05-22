@@ -15,7 +15,7 @@ source .env
 # create log folder if not exists
 if ! [ -d log ]; then 
 	# check required dependencies
-	for x in curl jq; do 
+	for x in curl jq xclip; do 
 		[[ "$(command -v $x)" == "" ]] && echo "🔸'$x' is a required dependency and should be installed." && exit
 	done
 
@@ -254,7 +254,7 @@ elif [[ "$1" =~ ^(--code|-C)$ ]]; then
 	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
-	full_prompt="$AIHUB_CODE_PREFIX \n\n [lang]: $lang \n\n [prompt]: $prompt"
+	full_prompt="$AIHUB_CODE_PREFIX\n[lang]: $lang \n[prompt]: $prompt"
 
 	prompt_once "CODE_$title" "$full_prompt"
 
@@ -268,9 +268,27 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
-	full_prompt="$AIHUB_SHELL_PREFIX \n\n [os]: $my_os \n\n [prompt]: $prompt"
+	full_prompt="$AIHUB_SHELL_PREFIX\n[os]: $my_os \n[prompt]: $prompt"
+	
+	comand="$(prompt_once "SHELL_$title" "$full_prompt")"
+	printf "%s\n\n" "$comand"
+	# clean
+	comand=$(echo "$comand" | sed ':a;N;$!ba; s/^[[:space:]]*//; s/[[:space:]]*$//')
 
-	prompt_once "SHELL_$title" "$full_prompt"
+	read -e -p "⚙️ (c)copy to clipboard (p)paste to edit: " option
+	case $option in 
+		"c")
+			echo "$comand" | xclip -selection clipboard
+			echo "⚡️ comand copied to clipboard"
+			;;
+		"p")
+			read -e -i "$comand" -p "⚡️ " comand_edited
+			eval "$comand_edited"
+			;;
+		*)
+			exit 0
+			;;
+	esac
 
 elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
 	choose_provider
