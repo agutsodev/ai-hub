@@ -9,6 +9,8 @@
 
 [--provider|-p]: 	        switch the LLM provider/model
 
+[--update|-u]: 	                update the source code
+
 [--help|-h]:			display usage helper
 
 See more on README.md or https://github.com/agutsodev/ai-hub

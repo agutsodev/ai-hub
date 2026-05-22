@@ -92,7 +92,17 @@ ai --provider
 ai -p
 ```
 
-> Provider state will be saved to `.env.state`.
+### Update source code
+
+**ai [--update|-u]**
+
+```bash
+ai --update
+```
+
+```bash
+ai -u
+```
 
 ### Usage helper
 

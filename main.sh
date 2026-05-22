@@ -275,6 +275,9 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
 	choose_provider
 
+elif [[ "$1" =~ ^(--update|-u)$ ]]; then
+	git fetch && git pull
+
 else	
 	prompt="$@"
 	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
