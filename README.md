@@ -9,7 +9,7 @@ A shell script to interact with LLM [providers](./provider/) on your terminal.
 - Map an alias on your shell configuration
 
 ```bash
-git clone https://github.com/agutsosama/ai-hub.git ~/.ai-hub && chmod +x ~/.ai-hub/main.sh && echo "alias ai='~/.ai-hub/main.sh'" >> ~/.zshrc && source ~/.zshrc
+git clone https://github.com/agutsodev/ai-hub.git ~/.ai-hub && chmod +x ~/.ai-hub/main.sh && echo "alias ai='~/.ai-hub/main.sh'" >> ~/.zshrc && source ~/.zshrc
 ```
 
 ## Usage

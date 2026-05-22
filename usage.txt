@@ -11,4 +11,4 @@
 
 [--help|-h]:			display usage helper
 
-See more on README.md or https://github.com/agutsosama/ai-hub
+See more on README.md or https://github.com/agutsodev/ai-hub
