@@ -3,7 +3,7 @@
 
 # set up error handling
 set -eET
-trap 'echo "❌ ERROR in $0 file at line $LINENO (code $?)"' ERR
+trap 'echo "🔸error in $0 file at line $LINENO (code $?)"' ERR
 
 # navigate to absolute path
 cd "$(dirname "$0")" || exit 
@@ -16,7 +16,7 @@ source .env
 if ! [ -d log ]; then 
 	# check required dependencies
 	for x in curl jq; do 
-		[[ "$(command -v $x)" == "" ]] && echo "❌ ERROR: '$x' is a required dependency and should be installed." && exit
+		[[ "$(command -v $x)" == "" ]] && echo "🔸'$x' is a required dependency and should be installed." && exit
 	done
 
 	mkdir -p log
@@ -80,14 +80,14 @@ prompt_once(){
 start_chat(){
 	local role="$@"
 	[[ "$role" == "" ]] && role=$AIHUB_ROLE
-	printf "🔷 role: $role\n"
+	printf "$role\n"
 
 	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 
 	local log_file=""
 	while true; do
 
-		while [ "$prompt" == "" ]; do read -e -p "🔹you: " prompt; done
+		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 		if [[ $log_file == "" ]]; then 
 			title=$(build_title "$prompt")
@@ -191,7 +191,7 @@ validate_provider_functions() {
     
     for func in "${required_functions[@]}"; do
         if ! declare -f "$func" > /dev/null; then
-            echo "❌ ERROR: provider '$provider' missing required function: $func"
+            echo "🔸provider '$provider' missing required function: $func"
             exit 1
         fi
     done
@@ -245,11 +245,13 @@ if [[ "$1" =~ ^(--help|-h)$ ]]; then
 elif [[ "$1" =~ ^(--chat|-c)$ ]]; then 	
 	start_chat "${@:2}"
 
-elif [[ "$1" =~ ^(--code|-C)$ ]]; then 
+elif [[ "$1" =~ ^(--code|-C)$ ]]; then
+	printf "$AIHUB_CODE_PREFIX\n"
+
 	lang="${@:2}"
 	while [ "$lang" == "" ]; do read -e -p "language: " lang; done
 
-	while [ "$prompt" == "" ]; do read -e -p "code prompt: " prompt; done
+	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
 	full_prompt="$AIHUB_CODE_PREFIX \n\n [lang]: $lang \n\n [prompt]: $prompt"
@@ -257,11 +259,13 @@ elif [[ "$1" =~ ^(--code|-C)$ ]]; then
 	prompt_once "CODE_$title" "$full_prompt"
 
 elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
+	printf "$AIHUB_SHELL_PREFIX\n"
+
 	source /etc/*-release
 	my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
 
 	prompt="${@:2}"
-	while [ "$prompt" == "" ]; do read -e -p "shell prompt: " prompt; done
+	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
 	full_prompt="$AIHUB_SHELL_PREFIX \n\n [os]: $my_os \n\n [prompt]: $prompt"
@@ -273,7 +277,7 @@ elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
 
 else	
 	prompt="$@"
-	while [ "$prompt" == "" ]; do read -e -p "prompt once: " prompt; done
+	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
 	
