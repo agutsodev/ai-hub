@@ -233,6 +233,13 @@ parse_completions_response_standard() {
     jq -r '.choices[].message.content' <<< "$1" 2>/dev/null
 }
 
+cleanup_output(){
+	# break lines from begin/end, quoted lines from begin/end, trim
+	echo "$1" | sed ':a;N;$!ba; s/^[[:space:]]*//; s/[[:space:]]*$//' \
+			  | sed '1{/^[[:space:]]*```/d}; ${/^[[:space:]]*```[[:space:]]*$/d;}' \
+			  | sed '1{s/^[[:space:]]*//}; ${s/[[:space:]]*$//}'
+}
+
 ### MAIN ###
 
 # load all providers
@@ -264,17 +271,18 @@ elif [[ "$1" =~ ^(--code|-C)$ ]]; then
 	output="$(prompt_once "CODE_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
 	printf "%s\n\n" "$output"
 	[[ "$status" != 0 ]] && exit $status;
+	code=$(cleanup_output "$output")
 
 	read -e -p "⚙️  (c)copy to clipboard (s)save to file: " option
 	case $option in 
 		"c")
-			echo "$output" | xclip -selection clipboard
+			echo "$code" | xclip -selection clipboard
 			echo "⚡️ code copied to clipboard"
 			;;
 		"s")
 			timestamp=$(date +"%Y%m%d_%H%M%S")
 			filename="${lang}_${timestamp}.md"
-			echo "$output" > "$filename"
+			echo "$code" > "$filename"
 			echo "💾 saved to $filename"
 			;;
 	esac
@@ -295,9 +303,7 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 	output="$(prompt_once "SHELL_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
 	printf "%s\n\n" "$output"
 	[[ "$status" != 0 ]] && exit $status;
-
-	# clean
-	comand=$(echo "$output" | sed ':a;N;$!ba; s/^[[:space:]]*//; s/[[:space:]]*$//')
+	comand=$(cleanup_output "$output")
 
 	read -e -p "⚙️  (c)copy to clipboard (p)paste to edit: " option
 	case $option in 
