@@ -77,10 +77,14 @@ prompt_once(){
 	print_answer "$answer"
 }
 
+print_role(){
+	printf "▫️  %s\n" "$1"
+}
+
 start_chat(){
 	local role="$@"
 	[[ "$role" == "" ]] && role=$AIHUB_ROLE
-	printf "$role\n"
+	print_role "$role"
 
 	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 
@@ -246,20 +250,37 @@ elif [[ "$1" =~ ^(--chat|-c)$ ]]; then
 	start_chat "${@:2}"
 
 elif [[ "$1" =~ ^(--code|-C)$ ]]; then
-	printf "$AIHUB_CODE_PREFIX\n"
+	print_role "$AIHUB_CODE_PREFIX"
 
 	lang="${@:2}"
-	while [ "$lang" == "" ]; do read -e -p "language: " lang; done
+	while [ "$lang" == "" ]; do read -e -p "⚙️  language: " lang; done
 
 	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 	title=$(build_title "$prompt")
-	full_prompt="$AIHUB_CODE_PREFIX\n[lang]: $lang \n[prompt]: $prompt"
+	full_prompt="$AIHUB_CODE_PREFIX\n[language]: $lang \n[prompt]: $prompt"
 
-	prompt_once "CODE_$title" "$full_prompt"
+	# capture both stdout and stderr, and status on subshell
+	output="$(prompt_once "CODE_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
+	printf "%s\n\n" "$output"
+	[[ "$status" != 0 ]] && exit $status;
+
+	read -e -p "⚙️  (c)copy to clipboard (s)save to file: " option
+	case $option in 
+		"c")
+			echo "$output" | xclip -selection clipboard
+			echo "⚡️ code copied to clipboard"
+			;;
+		"s")
+			timestamp=$(date +"%Y%m%d_%H%M%S")
+			filename="${lang}_${timestamp}.md"
+			echo "$output" > "$filename"
+			echo "💾 saved to $filename"
+			;;
+	esac
 
 elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
-	printf "$AIHUB_SHELL_PREFIX\n"
+	print_role "$AIHUB_SHELL_PREFIX"
 
 	source /etc/*-release
 	my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
@@ -270,12 +291,15 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 	title=$(build_title "$prompt")
 	full_prompt="$AIHUB_SHELL_PREFIX\n[os]: $my_os \n[prompt]: $prompt"
 	
-	comand="$(prompt_once "SHELL_$title" "$full_prompt")"
-	printf "%s\n\n" "$comand"
-	# clean
-	comand=$(echo "$comand" | sed ':a;N;$!ba; s/^[[:space:]]*//; s/[[:space:]]*$//')
+	# capture both stdout and stderr, and status on subshell
+	output="$(prompt_once "SHELL_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
+	printf "%s\n\n" "$output"
+	[[ "$status" != 0 ]] && exit $status;
 
-	read -e -p "⚙️ (c)copy to clipboard (p)paste to edit: " option
+	# clean
+	comand=$(echo "$output" | sed ':a;N;$!ba; s/^[[:space:]]*//; s/[[:space:]]*$//')
+
+	read -e -p "⚙️  (c)copy to clipboard (p)paste to edit: " option
 	case $option in 
 		"c")
 			echo "$comand" | xclip -selection clipboard
@@ -284,9 +308,6 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 		"p")
 			read -e -i "$comand" -p "⚡️ " comand_edited
 			eval "$comand_edited"
-			;;
-		*)
-			exit 0
 			;;
 	esac
 
