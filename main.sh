@@ -3,7 +3,7 @@
 
 # set up error handling
 set -eET
-trap 'echo "ERROR in $0 file at line $LINENO (code $?)"' ERR
+trap 'echo "❌ ERROR in $0 file at line $LINENO (code $?)"' ERR
 
 # navigate to absolute path
 cd $(dirname "$0") || exit 
@@ -16,7 +16,7 @@ source .env
 if ! [ -d log ]; then 
 	# check required dependencies
 	for x in curl jq; do 
-		[[ "$(command -v $x)" == "" ]] && echo "ERROR: '$x' is a required dependency and should be installed." && exit
+		[[ "$(command -v $x)" == "" ]] && echo "❌ ERROR: '$x' is a required dependency and should be installed." && exit
 	done
 
 	mkdir -p log
@@ -28,7 +28,7 @@ fi
 should_retry(){
 	local try_again=""
 	while [[ "$try_again" != "y" && "$try_again" != "n" ]]; do
-		read -e -p "🔸no answer receiveid, try again? (y/n): " try_again
+		read -e -p "🔸no answer received, try again? (y/n): " try_again
 	done
 	
 	[[ "$try_again" == "n" ]] && exit 0
@@ -150,6 +150,7 @@ choose_provider(){
     select AIHUB_PROVIDER in "${providers[@]}"; do
         [[ -n "$AIHUB_PROVIDER" ]] && break
     done
+	validate_provider_functions "$AIHUB_PROVIDER"
 
     models=($(models_$AIHUB_PROVIDER))
     models+=("see-all")
@@ -177,6 +178,23 @@ choose_provider(){
     save_state "$AIHUB_PROVIDER" "$AIHUB_MODEL" 
     show_provider
 	choose_provider_once=true
+}
+
+validate_provider_functions() {
+    local provider=$1
+    local required_functions=(
+        "models_$provider"
+        "all_models_$provider"
+        "request_completions_$provider"
+        "parse_completions_response_$provider"
+    )
+    
+    for func in "${required_functions[@]}"; do
+        if ! declare -f "$func" > /dev/null; then
+            echo "❌ ERROR: provider '$provider' missing required function: $func"
+            exit 1
+        fi
+    done
 }
 
 show_provider(){
