@@ -307,7 +307,7 @@ elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
 			;;
 		"p")
 			read -e -i "$comand" -p "⚡️ " comand_edited
-			eval "$comand_edited"
+			bash -c "$comand_edited"
 			;;
 	esac
 
