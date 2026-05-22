@@ -317,6 +317,10 @@ elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
 elif [[ "$1" =~ ^(--update|-u)$ ]]; then
 	git fetch && git pull
 
+elif [[ "$1" =~ ^(--version|-v)$ ]]; then
+	git branch | grep "*"
+	git rev-parse HEAD
+
 else	
 	prompt="$@"
 	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done

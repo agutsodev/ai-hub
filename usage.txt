@@ -11,6 +11,8 @@
 
 [--update|-u]: 	                update the source code
 
+[--version|-v]: 	        show cuurent version
+
 [--help|-h]:			display usage helper
 
 See more on README.md or https://github.com/agutsodev/ai-hub
