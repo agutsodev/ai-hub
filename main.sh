@@ -6,11 +6,11 @@ set -eET
 trap 'echo "❌ ERROR in $0 file at line $LINENO (code $?)"' ERR
 
 # navigate to absolute path
-cd $(dirname "$0") || exit 
+cd "$(dirname "$0")" || exit 
 
 # default config
 source .env 
-[[ -f .env.keys ]] && source .env.keys 
+[[ -f .env.keys ]] && source .env.keys
 
 # create log folder if not exists
 if ! [ -d log ]; then 
@@ -61,7 +61,7 @@ prompt_once(){
 	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 	payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
 	
-	echo -e "$(date) payload: \n "$payload" \n" > $log_file
+	printf "%s\n%s\n\n" "$(date) payload:" "$payload" > "$log_file"
 
 	while true; do
 		response=$(request_completions_$AIHUB_PROVIDER "$payload")		
@@ -69,9 +69,9 @@ prompt_once(){
 		should_retry
 	done
 
-	echo -e "$(date) response: \n $response \n" >> $log_file
+	printf "%s\n%s\n\n" "$(date) response:" "$response" >> "$log_file"
 
-	answer=$(parse_completions_response_$AIHUB_PROVIDER "$response")
+	answer=$(parse_completions_response_$AIHUB_PROVIDER "$response" || true)
 	[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
 
 	print_answer "$answer"
@@ -96,17 +96,17 @@ start_chat(){
 
 		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
 
-		echo -e "$(date) payload: \n $payload \n" >> $log_file
-		
+		printf "%s\n%s\n\n" "$(date) payload:" "$payload" >> "$log_file"		
+
 		while true; do
 			response=$(request_completions_$AIHUB_PROVIDER "$payload")
 			[[ "$response" != "" ]] && break
 			should_retry
 		done
 
-		echo -e "$(date) response: \n $response \n" >> $log_file
+		printf "%s\n%s\n\n" "$(date) response:" "$response" >> "$log_file"		
 
-		answer=$(parse_completions_response_$AIHUB_PROVIDER "$response")
+		answer=$(parse_completions_response_$AIHUB_PROVIDER "$response" || true)
 		[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
 
 		print_answer "$answer"
@@ -129,8 +129,8 @@ validate_provider_key() {
 		done
         
         # Add to the top of the custom env file
-        touch .env.keys
-        echo -e "$var_name=$api_key\n$(cat .env.keys)" > .env.keys
+		[[ ! -f .env.keys ]] && touch .env.keys && chmod 600 .env.keys
+        printf '%s=%s\n' "$var_name" "$api_key" >> .env.keys
         source ".env.keys"
     fi
 }
@@ -226,7 +226,7 @@ concate_completions_payload_standard() {
 }
 
 parse_completions_response_standard() {
-    jq -r '.choices[]?.message?.content' <<< "$1"
+    jq -r '.choices[].message.content' <<< "$1" 2>/dev/null
 }
 
 ### MAIN ###
