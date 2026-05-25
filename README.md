@@ -38,17 +38,16 @@ After that the actual chat will start.
 
 ### Generate shell commands
 
-**ai [--shell|-s] prompt**
+**ai [--shell|-s]**
 
-This options answers a single prompt that aims to generate a shell command.
+This options aims to generate a shell command.
 
 ```bash
+ai -s
 ai --shell
 ```
 
-```bash
-ai --shell "list the name, path and size of the 5 biggest files on my computer"
-```
+After that the actual prompt should be provided.
 
 > This is achieved by adding a prefix (`AIHUB_SHELL_PREFIX`) to your actual prompt.
 
@@ -56,13 +55,10 @@ ai --shell "list the name, path and size of the 5 biggest files on my computer"
 
 **ai [--code|-c] language**
 
-This options answers a single prompt that aims to generate code for a given language.
+This options to generate code for a given language.
 
 ```bash
-ai --code
-```
-
-```bash
+ai -c
 ai --code java
 ```
 
@@ -76,9 +72,6 @@ After that the actual prompt should be provided.
 
 ```bash
 ai --provider
-```
-
-```bash
 ai -p
 ```
 
@@ -88,9 +81,6 @@ ai -p
 
 ```bash
 ai --update
-```
-
-```bash
 ai -u
 ```
 
@@ -100,9 +90,6 @@ ai -u
 
 ```bash
 ai -h
-```
-
-```bash
 ai --help
 ```
 
@@ -112,7 +99,7 @@ Available environment variables. Create a `.env` to override the default config.
 
 | Var                      | Description                                    |
 | ------------------------ | ---------------------------------------------- |
-| AIHUB_TEMPERATURE        | Temperature for API calls.          |
+| AIHUB_TEMPERATURE        | Temperature for API calls.                     |
 | AIHUB_MAX_TOKENS         | Max tokens for completion API calls.           |
 | AIHUB_ROLE               | Default assistant role to start chat sessions. |
 | AIHUB_SHELL_PREFIX       | Prefix to shell generation prompts.            |

@@ -45,34 +45,8 @@ build_title(){
 
 build_log_file_name(){
 	local title=$1
-	local file_name=$(echo "${title}_${AIHUB_PROVIDER}_${AIHUB_MODEL}" | tr '/' '-')
+	local file_name=$(echo "${title}_${AIHUB_PROVIDER}-${AIHUB_MODEL}" | tr '/' '-')
 	echo "log/$(date '+%y%m%d-%H%M%S')_${file_name}.txt"
-}
-
-prompt_once(){
-	local title="$1"
-	local prompt="$2"
-
-	local log_file=$(build_log_file_name "$title")
-	local role=$AIHUB_ROLE
-
-	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
-	payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
-	
-	printf "%s\n%s\n\n" "$(date) payload:" "$payload" > "$log_file"
-
-	while true; do
-		response=$(request_completions_$AIHUB_PROVIDER "$payload")		
-		[[ "$response" != "" ]] && break
-		should_retry
-	done
-
-	printf "%s\n%s\n\n" "$(date) response:" "$response" >> "$log_file"
-
-	answer=$(parse_completions_response_$AIHUB_PROVIDER "$response" || true)
-	[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
-
-	print_answer "$answer"
 }
 
 print_role(){
@@ -80,20 +54,23 @@ print_role(){
 }
 
 start_chat(){
-	local role="$@"
+	local role="$1"
 	[[ "$role" == "" ]] && role=$AIHUB_ROLE
 	print_role "$role"
+
+	local actions="$2"
 
 	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 
 	local log_file=""
+	local title=""
 	while true; do
 
 		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
 
 		if [[ $log_file == "" ]]; then 
 			title=$(build_title "$prompt")
-			log_file=$(build_log_file_name "CHAT_$title")
+			log_file=$(build_log_file_name "$title")
 		fi
 
 		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
@@ -112,6 +89,33 @@ start_chat(){
 
 		print_answer "$answer"
 
+		if [[ $actions != "" ]]; then
+			read -e -p "⚙️  $actions (k)keep on chat: " option
+			case $option in 
+				"c")
+					clean_answer=$(cleanup_output "$answer")
+					echo "$clean_answer" | xclip -selection clipboard
+					echo "⚡️ comand copied to clipboard";
+					exit 0;			
+					;;
+				"p")
+					clean_answer=$(cleanup_output "$answer")
+					read -e -i "$clean_answer" -p "⚡️ " comand_edited
+					bash -c "$comand_edited"
+					exit 0;
+					;;
+				"s")
+					clean_answer=$(cleanup_output "$answer")
+					timestamp=$(date +"%y%m%d-%H%M%S")
+					filename="code/${timestamp}_${title}.md"
+					[[ ! -d code ]] && mkdir -p code
+					echo "$clean_answer" > "$filename"
+					echo "💾 $filename"
+					exit 0;
+					;;
+			esac
+		fi
+		
 		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "assistant" "$answer")
 
 		prompt=""
@@ -261,66 +265,18 @@ else
 		choose_provider	
 		
 	elif [[ "$1" =~ ^(--code|-c)$ ]]; then
-		print_role "$AIHUB_CODE_PREFIX"
-
 		lang="${@:2}"
 		while [ "$lang" == "" ]; do read -e -p "⚙️  language: " lang; done
 
-		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
-
-		title=$(build_title "$prompt")
-		full_prompt="$AIHUB_CODE_PREFIX\n[language]: $lang \n[prompt]: $prompt"
-
-		# capture both stdout and stderr, and status on subshell
-		output="$(prompt_once "CODE_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
-		printf "%s\n\n" "$output"
-		[[ "$status" != 0 ]] && exit $status;
-		code=$(cleanup_output "$output")
-
-		read -e -p "⚙️  (c)copy to clipboard (s)save to file: " option
-		case $option in 
-			"c")
-				echo "$code" | xclip -selection clipboard
-				echo "⚡️ code copied to clipboard"
-				;;
-			"s")
-				timestamp=$(date +"%y%m%d-%H%M%S")
-				filename="code/${lang}_${timestamp}.md"
-				[[ ! -d code ]] && mkdir -p code
-				echo "$code" > "$filename"
-				echo "💾 $filename"
-				;;
-		esac
+		full_prompt="$AIHUB_CODE_PREFIX [language: $lang]"
+		start_chat "$full_prompt" "(c)copy to clipboard (s)save to file"
 
 	elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
-		print_role "$AIHUB_SHELL_PREFIX"
-
 		source /etc/*-release
 		my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
 
-		prompt="${@:2}"
-		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
-
-		title=$(build_title "$prompt")
-		full_prompt="$AIHUB_SHELL_PREFIX\n[os]: $my_os \n[prompt]: $prompt"
-		
-		# capture both stdout and stderr, and status on subshell
-		output="$(prompt_once "SHELL_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
-		printf "%s\n\n" "$output"
-		[[ "$status" != 0 ]] && exit $status;
-		comand=$(cleanup_output "$output")
-
-		read -e -p "⚙️  (c)copy to clipboard (p)paste to edit: " option
-		case $option in 
-			"c")
-				echo "$comand" | xclip -selection clipboard
-				echo "⚡️ comand copied to clipboard"
-				;;
-			"p")
-				read -e -i "$comand" -p "⚡️ " comand_edited
-				bash -c "$comand_edited"
-				;;
-		esac
+		full_prompt="$AIHUB_SHELL_PREFIX [os: $my_os]"
+		start_chat "$full_prompt" "(c)copy to clipboard (p)paste to edit"
 	else	
 		start_chat "${@:1}"
 	fi
