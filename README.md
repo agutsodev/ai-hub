@@ -14,32 +14,22 @@ git clone https://github.com/agutsodev/ai-hub.git ~/.ai-hub && chmod +x ~/.ai-hu
 
 ## Usage
 
-### Prompt once
-
-**ai "prompt"**
-
-This options answers to a single prompt.
-
-```bash
-ai "what are the top 3 most popular programing languages?"
-```
-
 ### Start a chat session
 
-**ai [--chat|-c] assistant-role**
+**ai [assistant-role]**
 
 This options handle multiple sequential prompts.
 
 - Using the default assistant role
 
   ```bash
-  ai --chat
+  ai
   ```
 
 - Supply a custom assistant role
 
   ```bash
-  ai --chat "You are a tech expert"
+  ai "You are a tech expert"
   ```
 
 After that the actual chat will start.
@@ -64,7 +54,7 @@ ai --shell "list the name, path and size of the 5 biggest files on my computer"
 
 ### Generate code
 
-**ai [--code|-C] language**
+**ai [--code|-c] language**
 
 This options answers a single prompt that aims to generate code for a given language.
 

@@ -1,11 +1,9 @@
 
-[prompt]: 			prompt once
-
-[--chat|-c] [assistant-role]: 	start a chat session
+[assistant-role]: 		start a chat session
 
 [--shell|-s] [prompt]:		generate shell comands
 
-[--code|-C] [language]: 	generate code to a given language
+[--code|-c] [language]: 	generate code to a given language
 
 [--provider|-p]: 	        switch the LLM provider/model
 

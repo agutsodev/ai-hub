@@ -34,7 +34,7 @@ should_retry(){
 
 print_answer(){
 	local answer="$1"
-	printf "\n%s\n" "$answer"
+	printf "\n%s\n\n" "$answer"
 }
 
 build_title(){
@@ -46,7 +46,7 @@ build_title(){
 build_log_file_name(){
 	local title=$1
 	local file_name=$(echo "${title}_${AIHUB_PROVIDER}_${AIHUB_MODEL}" | tr '/' '-')
-	echo "log/$(date '+%Y%m%d-%H%M%S')_${file_name}.txt"
+	echo "log/$(date '+%y%m%d-%H%M%S')_${file_name}.txt"
 }
 
 prompt_once(){
@@ -238,83 +238,9 @@ cleanup_output(){
 
 ### MAIN ###
 
-# load all providers
-for provider in provider/*.sh; do source "$provider"; done
-
-# handle state
-[[ -f ".env.state" ]] && source ".env.state"
-[[ -z "$AIHUB_PROVIDER" ]] && choose_provider || show_provider
-
 # handle options
 if [[ "$1" =~ ^(--help|-h)$ ]]; then 
 	cat usage.txt
-
-elif [[ "$1" =~ ^(--chat|-c)$ ]]; then 	
-	start_chat "${@:2}"
-
-elif [[ "$1" =~ ^(--code|-C)$ ]]; then
-	print_role "$AIHUB_CODE_PREFIX"
-
-	lang="${@:2}"
-	while [ "$lang" == "" ]; do read -e -p "⚙️  language: " lang; done
-
-	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
-
-	title=$(build_title "$prompt")
-	full_prompt="$AIHUB_CODE_PREFIX\n[language]: $lang \n[prompt]: $prompt"
-
-	# capture both stdout and stderr, and status on subshell
-	output="$(prompt_once "CODE_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
-	printf "%s\n\n" "$output"
-	[[ "$status" != 0 ]] && exit $status;
-	code=$(cleanup_output "$output")
-
-	read -e -p "⚙️  (c)copy to clipboard (s)save to file: " option
-	case $option in 
-		"c")
-			echo "$code" | xclip -selection clipboard
-			echo "⚡️ code copied to clipboard"
-			;;
-		"s")
-			timestamp=$(date +"%Y%m%d_%H%M%S")
-			filename="${lang}_${timestamp}.md"
-			echo "$code" > "$filename"
-			echo "💾 saved to $filename"
-			;;
-	esac
-
-elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
-	print_role "$AIHUB_SHELL_PREFIX"
-
-	source /etc/*-release
-	my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
-
-	prompt="${@:2}"
-	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
-
-	title=$(build_title "$prompt")
-	full_prompt="$AIHUB_SHELL_PREFIX\n[os]: $my_os \n[prompt]: $prompt"
-	
-	# capture both stdout and stderr, and status on subshell
-	output="$(prompt_once "SHELL_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
-	printf "%s\n\n" "$output"
-	[[ "$status" != 0 ]] && exit $status;
-	comand=$(cleanup_output "$output")
-
-	read -e -p "⚙️  (c)copy to clipboard (p)paste to edit: " option
-	case $option in 
-		"c")
-			echo "$comand" | xclip -selection clipboard
-			echo "⚡️ comand copied to clipboard"
-			;;
-		"p")
-			read -e -i "$comand" -p "⚡️ " comand_edited
-			bash -c "$comand_edited"
-			;;
-	esac
-
-elif [[ "$1" =~ ^(--provider|-p)$ ]]; then
-	choose_provider
 
 elif [[ "$1" =~ ^(--update|-u)$ ]]; then
 	git fetch && git pull
@@ -323,11 +249,79 @@ elif [[ "$1" =~ ^(--version|-v)$ ]]; then
 	git branch | grep "*"
 	git rev-parse HEAD
 
-else	
-	prompt="$@"
-	while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
+else
+	# load all providers
+	for provider in provider/*.sh; do source "$provider"; done
 
-	title=$(build_title "$prompt")
-	
-	prompt_once "PROMPT_$title" "$prompt"
+	# handle state
+	[[ -f ".env.state" ]] && source ".env.state"
+	[[ -z "$AIHUB_PROVIDER" ]] && choose_provider || show_provider
+
+	if [[ "$1" =~ ^(--provider|-p)$ ]]; then
+		choose_provider	
+		
+	elif [[ "$1" =~ ^(--code|-c)$ ]]; then
+		print_role "$AIHUB_CODE_PREFIX"
+
+		lang="${@:2}"
+		while [ "$lang" == "" ]; do read -e -p "⚙️  language: " lang; done
+
+		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
+
+		title=$(build_title "$prompt")
+		full_prompt="$AIHUB_CODE_PREFIX\n[language]: $lang \n[prompt]: $prompt"
+
+		# capture both stdout and stderr, and status on subshell
+		output="$(prompt_once "CODE_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
+		printf "%s\n\n" "$output"
+		[[ "$status" != 0 ]] && exit $status;
+		code=$(cleanup_output "$output")
+
+		read -e -p "⚙️  (c)copy to clipboard (s)save to file: " option
+		case $option in 
+			"c")
+				echo "$code" | xclip -selection clipboard
+				echo "⚡️ code copied to clipboard"
+				;;
+			"s")
+				timestamp=$(date +"%y%m%d-%H%M%S")
+				filename="code/${lang}_${timestamp}.md"
+				[[ ! -d code ]] && mkdir -p code
+				echo "$code" > "$filename"
+				echo "💾 $filename"
+				;;
+		esac
+
+	elif [[ "$1" =~ ^(--shell|-s)$ ]]; then
+		print_role "$AIHUB_SHELL_PREFIX"
+
+		source /etc/*-release
+		my_os="$(uname) $(echo $DISTRIB_ID) $(echo $DISTRIB_RELEASE)"	
+
+		prompt="${@:2}"
+		while [ "$prompt" == "" ]; do read -e -p "🔹 " prompt; done
+
+		title=$(build_title "$prompt")
+		full_prompt="$AIHUB_SHELL_PREFIX\n[os]: $my_os \n[prompt]: $prompt"
+		
+		# capture both stdout and stderr, and status on subshell
+		output="$(prompt_once "SHELL_$title" "$full_prompt" 2>&1)" && status=$? || status=$?
+		printf "%s\n\n" "$output"
+		[[ "$status" != 0 ]] && exit $status;
+		comand=$(cleanup_output "$output")
+
+		read -e -p "⚙️  (c)copy to clipboard (p)paste to edit: " option
+		case $option in 
+			"c")
+				echo "$comand" | xclip -selection clipboard
+				echo "⚡️ comand copied to clipboard"
+				;;
+			"p")
+				read -e -i "$comand" -p "⚡️ " comand_edited
+				bash -c "$comand_edited"
+				;;
+		esac
+	else	
+		start_chat "${@:1}"
+	fi
 fi
