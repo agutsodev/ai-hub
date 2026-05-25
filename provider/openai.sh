@@ -6,7 +6,7 @@ models_openai() {
 
 all_models_openai() {
     validate_provider_key "OPENAI_API_KEY" "https://platform.openai.com/account/api-keys"
-    curl -s https://api.openai.com/v1/models \
+    curl $CURL_OPTS https://api.openai.com/v1/models \
         -H "Authorization: Bearer $OPENAI_API_KEY" | \
         jq -r '.data[].id' | sort -u
 }
@@ -15,7 +15,7 @@ request_completions_openai() {
     local payload="$1"
     validate_provider_key "OPENAI_API_KEY" "https://platform.openai.com/account/api-keys"
 
-    curl $CURL_OPTS -s https://api.openai.com/v1/chat/completions \
+    curl $CURL_OPTS https://api.openai.com/v1/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $OPENAI_API_KEY" \
         -d "$payload"

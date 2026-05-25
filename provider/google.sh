@@ -6,7 +6,7 @@ models_google() {
 
 all_models_google() {
     validate_provider_key "GEMINI_API_KEY" "https://platform.openai.com/account/api-keys"
-    curl -s "https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}" | \
+    curl "https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}" | \
         jq -r '.models[].name' | sed 's/models\///' | sort -u
 }
 
@@ -14,7 +14,7 @@ request_completions_google() {
     local payload="$1"
     validate_provider_key "GEMINI_API_KEY" "https://platform.openai.com/account/api-keys"
 
-    curl $CURL_OPTS -s https://generativelanguage.googleapis.com/v1beta/openai/chat/completions \
+    curl $CURL_OPTS https://generativelanguage.googleapis.com/v1beta/openai/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $GEMINI_API_KEY" \
         -d "$payload"

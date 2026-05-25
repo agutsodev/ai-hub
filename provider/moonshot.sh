@@ -6,7 +6,7 @@ models_moonshot() {
 
 all_models_moonshot() {
     validate_provider_key "MOONSHOT_API_KEY" "https://platform.moonshot.ai/console/api-keys"
-    curl -s https://api.moonshot.ai/v1/models \
+    curl $CURL_OPTS https://api.moonshot.ai/v1/models \
         -H "Authorization: Bearer $MOONSHOT_API_KEY" | \
         jq -r '.data[].id' | sort -u
 }
@@ -15,7 +15,7 @@ request_completions_moonshot() {
     local payload="$1"
     validate_provider_key "MOONSHOT_API_KEY" "https://platform.moonshot.ai/console/api-keys"
     
-    curl $CURL_OPTS -s https://api.moonshot.ai/v1/chat/completions \
+    curl $CURL_OPTS https://api.moonshot.ai/v1/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $MOONSHOT_API_KEY" \
         -d "$payload"

@@ -6,7 +6,7 @@ models_together() {
 
 all_models_together() {
     validate_provider_key "TOGETHER_API_KEY" "https://api.together.ai/settings/api-keys"
-    curl -s https://api.together.xyz/v1/models \
+    curl $CURL_OPTS https://api.together.xyz/v1/models \
         -H "Authorization: Bearer $TOGETHER_API_KEY" | \
         jq -r '.[].id' | sort -u
 }
@@ -15,7 +15,7 @@ request_completions_together() {
     local payload="$1"
     validate_provider_key "TOGETHER_API_KEY" "https://api.together.ai/settings/api-keys"
 
-    curl $CURL_OPTS -s https://api.together.ai/v1/chat/completions \
+    curl $CURL_OPTS https://api.together.ai/v1/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $TOGETHER_API_KEY" \
         -d "$payload"

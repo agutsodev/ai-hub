@@ -18,7 +18,6 @@ if ! [ -d log ]; then
 	for x in curl jq xclip; do 
 		[[ "$(command -v $x)" == "" ]] && echo "🔸'$x' is a required dependency and should be installed." && exit
 	done
-
 	mkdir -p log
 fi
 
@@ -30,7 +29,6 @@ should_retry(){
 	while [[ "$try_again" != "y" && "$try_again" != "n" ]]; do
 		read -e -p "🔸no answer received, try again? (y/n): " try_again
 	done
-	
 	[[ "$try_again" == "n" ]] && exit 0
 }
 
@@ -99,7 +97,6 @@ start_chat(){
 		fi
 
 		payload=$(concate_completions_payload_$AIHUB_PROVIDER "$payload" "user" "$prompt")
-
 		printf "%s\n%s\n\n" "$(date) payload:" "$payload" >> "$log_file"		
 
 		while true; do
@@ -132,7 +129,6 @@ validate_provider_key() {
 			read -e -p "🔑 $var_name required ($provider_url): " api_key; 
 		done
         
-        # Add to the top of the custom env file
 		[[ ! -f .env.keys ]] && touch .env.keys && chmod 600 .env.keys
         printf '%s=%s\n' "$var_name" "$api_key" >> .env.keys
         source ".env.keys"

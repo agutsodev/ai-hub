@@ -6,7 +6,7 @@ models_anthropic() {
 
 all_models_anthropic() {
     validate_provider_key "ANTHROPIC_API_KEY" "https://platform.claude.com/settings/keys"
-    curl -s https://api.anthropic.com/v1/models \
+    curl $CURL_OPTS https://api.anthropic.com/v1/models \
         -H "x-api-key: $ANTHROPIC_API_KEY" \
         -H "anthropic-version: 2023-06-01" | \
         jq -r '.data[].id' | sort -u
@@ -16,7 +16,7 @@ request_completions_anthropic() {
     local payload="$1"
     validate_provider_key "ANTHROPIC_API_KEY" "https://platform.claude.com/settings/keys"
 
-    curl $CURL_OPTS -s https://api.anthropic.com/v1/messages \
+    curl $CURL_OPTS https://api.anthropic.com/v1/messages \
         -H "Content-Type: application/json" \
         -H "x-api-key: $ANTHROPIC_API_KEY" \
         -H "anthropic-version: 2023-06-01" \
@@ -44,5 +44,5 @@ concate_completions_payload_anthropic() {
 }
 
 parse_completions_response_anthropic() {
-    jq -r '.content[]?.text' <<< "$1"
+    jq -r '.content[].text' <<< "$1" 2>/dev/null
 }

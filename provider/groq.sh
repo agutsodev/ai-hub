@@ -6,7 +6,7 @@ models_groq() {
 
 all_models_groq() {
     validate_provider_key "GROQ_API_KEY" "https://console.groq.com/keys"
-    curl -s https://api.groq.com/openai/v1/models \
+    curl $CURL_OPTS https://api.groq.com/openai/v1/models \
         -H "Authorization: Bearer $GROQ_API_KEY" | \
         jq -r '.data[].id' | sort -u
 }
@@ -15,7 +15,7 @@ request_completions_groq() {
     local payload="$1"
     validate_provider_key "GROQ_API_KEY" "https://console.groq.com/keys"
 
-    curl $CURL_OPTS -s https://api.groq.com/openai/v1/chat/completions \
+    curl $CURL_OPTS https://api.groq.com/openai/v1/chat/completions \
         -H "Content-Type: application/json" \
         -H "Authorization: Bearer $GROQ_API_KEY" \
         -d "$payload"
