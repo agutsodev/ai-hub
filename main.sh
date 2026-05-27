@@ -24,14 +24,6 @@ fi
 
 ### FUNCTIONS ### 
 
-should_retry(){
-	local try_again=""
-	while [[ "$try_again" != "y" && "$try_again" != "n" ]]; do
-		read -e -p "🔸no answer received, try again? (y/n): " try_again
-	done
-	[[ "$try_again" == "n" ]] && exit 0
-}
-
 print_answer(){
 	local answer="$1"
 	printf "\n%s\n\n" "$answer"
@@ -55,10 +47,10 @@ print_role(){
 
 start_chat(){
 	local role="$1"
+	local actions="$2"
+
 	[[ "$role" == "" ]] && role=$AIHUB_ROLE
 	print_role "$role"
-
-	local actions="$2"
 
 	local payload=$(init_completions_payload_$AIHUB_PROVIDER "$role")
 
@@ -78,16 +70,24 @@ start_chat(){
 
 		while true; do
 			response=$(request_completions_$AIHUB_PROVIDER "$payload")
-			[[ "$response" != "" ]] && break
-			should_retry
+			if [[ "$response" == "" ]]; then	
+				try_again=""
+				read -e -p "🔸no answer received, try again? (y/n): " try_again
+				[[ "$try_again" =~ ^(y|Y)$ ]] && continue
+				exit 0
+			fi
+			printf "%s\n%s\n\n" "$(date) response:" "$response" >> "$log_file"		
+		
+			answer=$(parse_completions_response_$AIHUB_PROVIDER "$response" || true)
+			if [[ "$answer" == "" ]]; then
+				try_again=""
+				read -e -p "🔸unexpected response: $response$(echo -e '\ntry again? (y/n):') " try_again
+				[[ "$try_again" =~ ^(y|Y)$ ]] && continue
+				exit 0
+			fi
+			print_answer "$answer"
+			break
 		done
-
-		printf "%s\n%s\n\n" "$(date) response:" "$response" >> "$log_file"		
-
-		answer=$(parse_completions_response_$AIHUB_PROVIDER "$response" || true)
-		[[ "$answer" == "" ]] && printf "\n🔸unexpected response: $response" && exit 1
-
-		print_answer "$answer"
 
 		if [[ $actions != "" ]]; then
 			read -e -p "⚙️  $actions (k)keep on chat: " option
